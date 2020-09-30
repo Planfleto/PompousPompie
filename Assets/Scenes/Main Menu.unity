@@ -1115,7 +1115,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: -3012234335524698422, guid: bf7db3258fc7e964fa257a79d91d72e2,
+  m_Sprite: {fileID: -8364085173493733142, guid: eef12453582a48a429c801357c5ebb0c,
     type: 3}
   m_Type: 0
   m_PreserveAspect: 1
@@ -3064,7 +3064,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   animationTextDialog: {fileID: 1557948390}
-  timePerCharacter: 0.1
+  timePerCharacter: 0.06
 --- !u!1 &1225355937
 GameObject:
   m_ObjectHideFlags: 0
