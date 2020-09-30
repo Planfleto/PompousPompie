@@ -27,7 +27,7 @@ public class IntroAnimation : MonoBehaviour
                 {
                     textFillAnimator.AddDialog("He might be planning to eat the Princess.", () => 
                     {
-                        textFillAnimator.AddDialog("We must save the Princess.", () => blackPanel.Animate(() => gameObject.SetActive(false)), 1f);
+                        textFillAnimator.AddDialog("We must save the Princess.", () => StartCoroutine(WaitForMethod(2f, () => blackPanel.Animate(() => gameObject.SetActive(false)))), 1f);
                     }, 1f);
                 }, 1f);
             });          
