@@ -403,6 +403,23 @@ public class Mario : MonoBehaviour {
 	}
 
 	void OnCollisionEnter2D(Collision2D other) {
+		Bowser boss = other.gameObject.GetComponentInParent<Bowser>();
+
+		if (boss != null && boss.isPompieBoss)
+		{
+			bool landedOnTop = false;
+
+			foreach (ContactPoint2D contact in other.contacts)
+			{
+				// On the player, landing on a surface has an upward normal.
+				if (contact.normal.y > 0.5f)
+					landedOnTop = true;
+			}
+
+			boss.HandlePompieContact(this, landedOnTop);
+			return;
+		}
+
 		Vector2 normal = other.contacts[0].normal;
 		Vector2 bottomSide = new Vector2 (0f, 1f);
 		bool bottomHit = normal == bottomSide;

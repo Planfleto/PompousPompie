@@ -16,6 +16,14 @@ public class MarioStompBox : MonoBehaviour {
 	//}
 
 	void OnTriggerEnter2D(Collider2D other) {
+		Bowser boss = other.GetComponentInParent<Bowser>();
+
+		if (boss != null && boss.isPompieBoss)
+		{
+			boss.TryPompieStomp(GetComponentInParent<Mario>());
+			return;
+		}
+
 		if (other.gameObject.tag.Contains("Enemy") && other.gameObject.tag != "Enemy/Piranha"
 			&& other.gameObject.tag != "Enemy/Bowser") {
 			Debug.Log (this.name + " OnTriggerEnter2D: recognizes " + other.gameObject.name);

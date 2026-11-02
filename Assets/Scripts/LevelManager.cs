@@ -94,7 +94,7 @@ public class LevelManager : MonoBehaviour {
 		mario.UpdateSize ();
 
 		// Sound volume
-		musicSource.volume = PlayerPrefs.GetFloat("musicVolume");
+		musicSource.volume = PlayerPrefs.GetFloat("musicVolume", 0.7f);
 		soundSource.volume = PlayerPrefs.GetFloat("soundVolume");
 		pauseSoundSource.volume = PlayerPrefs.GetFloat("soundVolume");
 

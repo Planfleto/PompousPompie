@@ -31,8 +31,21 @@ public class Bowser : Enemy {
 	private int defeatBonus;
 	private bool isFalling;
 
+	[Header("Pompie Boss")]
+	public bool isPompieBoss = false;
+	public int maxHealth = 10;
+	public int currentHealth;
+	public bool enablePompieAttacks = false;
+
+	private Vector3 initialScale;
+	private float lastStompTime = -10f;
+	private const float stompCooldown = 0.2f;
+
 	// Use this for initialization
 	void Start () {
+		initialScale = transform.localScale;
+		currentHealth = Mathf.Max(1, maxHealth);
+
 		t_LevelManager = FindObjectOfType<LevelManager> ();
 		mario = FindObjectOfType<Mario> ().gameObject;
 		m_Rigidbody2D = GetComponent<Rigidbody2D> ();
@@ -50,6 +63,9 @@ public class Bowser : Enemy {
 	
 	// Update is called once per frame
 	void Update () {
+		if (isPompieBoss && !enablePompieAttacks)
+		    return;
+
 		if (active) {
 			if (!canMove && Mathf.Abs (mario.gameObject.transform.position.x - transform.position.x) <= minDistanceToMove) {
 				canMove = true;
@@ -62,9 +78,11 @@ public class Bowser : Enemy {
 				if (timer <= 0) {
 					// Turn to face Mario
 					if (mario.transform.position.x < transform.position.x) { // mario to the left
-						transform.localScale = new Vector3 (-1, 1, 1);
+						transform.localScale = new Vector3(
+						    -Mathf.Abs(initialScale.x), initialScale.y, initialScale.z);
 					} else if (mario.transform.position.x > transform.position.x) {
-						transform.localScale = new Vector3 (1, 1, 1);
+						transform.localScale = new Vector3(
+						    Mathf.Abs(initialScale.x), initialScale.y, initialScale.z);
 					}
 
 					// Switch walk direction
@@ -90,7 +108,7 @@ public class Bowser : Enemy {
 	IEnumerator ShootFireCo(float delay) {
 		yield return new WaitForSeconds (delay);
 		GameObject fire = Instantiate(BowserFire, FirePos.position, Quaternion.identity);
-		fire.GetComponent<BowserFire> ().directionX = transform.localScale.x;
+		fire.GetComponent<BowserFire> ().directionX = Mathf.Sign(transform.localScale.x);
 		t_LevelManager.soundSource.PlayOneShot (t_LevelManager.bowserFireSound);
 	}
 
@@ -116,7 +134,62 @@ public class Bowser : Enemy {
 		}
 	}
 
-	public override void StompedByMario() {
+	public override void StompedByMario()
+	{
+		if (!isPompieBoss || dead)
+			return;
+
+		currentHealth = Mathf.Max(0, currentHealth - 1);
+		Debug.Log("Pompie health: " + currentHealth + "/" + maxHealth);
+
+		if (currentHealth == 0)
+		{
+			dead = true;
+			active = false;
+			StopAllCoroutines();
+			t_LevelManager.AddScore(defeatBonus);
+			Destroy(gameObject);
+		}
+	}
+
+	public bool TryPompieStomp(Mario player)
+	{
+		if (!isPompieBoss || dead || player == null || player.isDying)
+			return false;
+
+		Rigidbody2D playerBody = player.GetComponent<Rigidbody2D>();
+
+		// Require a descending player approaching from above.
+		if (playerBody == null || playerBody.velocity.y > 0.1f ||
+			player.transform.position.y <= transform.position.y)
+			return false;
+
+		// Prevent multiple colliders counting the same landing.
+		if (Time.time - lastStompTime < stompCooldown)
+			return false;
+
+		lastStompTime = Time.time;
+		t_LevelManager.MarioStompEnemy(this);
+		return true;
+	}
+
+	public void HandlePompieContact(Mario player, bool fromAbove)
+	{
+		if (dead || player == null || player.isDying)
+			return;
+
+		if (fromAbove)
+		{
+			TryPompieStomp(player);
+			return;
+		}
+
+		// Ignore lingering contact immediately after a successful stomp.
+		if (Time.time - lastStompTime < stompCooldown)
+			return;
+
+		if (!t_LevelManager.isInvincible())
+			t_LevelManager.MarioPowerDown();
 	}
 
 	void OnCollisionEnter2D(Collision2D other) {
@@ -125,9 +198,28 @@ public class Bowser : Enemy {
 		Vector2 rightSide = new Vector2 (1f, 0f);
 		bool sideHit = normal == leftSide || normal == rightSide;
 
-		if (other.gameObject.tag == "Player") {
-			t_LevelManager.MarioPowerDown ();
-		} else if (sideHit && other.gameObject.tag != "Mario Fireball") { // switch walk direction
+	if (other.gameObject.tag == "Player")
+	{
+		if (isPompieBoss)
+		{
+			Mario player = other.gameObject.GetComponent<Mario>();
+
+			bool landedOnTop = false;
+			foreach (ContactPoint2D contact in other.contacts)
+			{
+				// On the boss, contact from above has a downward normal.
+				if (contact.normal.y < -0.5f)
+					landedOnTop = true;
+			}
+
+			HandlePompieContact(player, landedOnTop);
+		}
+		else
+		{
+			t_LevelManager.MarioPowerDown();
+		}
+	} 
+	else if (sideHit && other.gameObject.tag != "Mario Fireball") { // switch walk direction
 			directionX = -directionX;
 		}
 	}
